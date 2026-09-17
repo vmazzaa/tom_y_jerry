@@ -1,9 +1,181 @@
-import example.pepita
+import TomYFlox.*
 
-describe "group of tests for pepita" {
+describe "cuidadores" {
 
-  test "pepita has initial energy" {
-    assert.equals(100, pepita.energy())
+  test "robocat limpia toda la casa" {
+    casa.asignarCuidador(roboCat)
+    roboCat.limpiarCasa()
+    assert.equals(0, casa.saberSuciedad())
+  }
+
+  test "tom reduce la suciedad en 110" {
+    casa.asignarCuidador(tom)
+    var suciedadInicial = casa.saberSuciedad()
+    tom.limpiarCasa()
+    assert.equals((suciedadInicial - 100).max(0), casa.saberSuciedad())
+  }
+
+  test "flox no puede sacar quilombero" {
+    casa.asignarCuidador(flox)
+    casa.asignarQuilombero(jerry)
+    casa.pasarDia()
+    assert.equals(jerry, casa.saberQuilombero())
+  }
+
+  test "interrumpirSuenio reduce la energia de tom en 20" {
+    var energiaInicial = tom.saberEnergia()
+    tom.interrumpirSuenio()
+    assert.equals(energiaInicial - 20, tom.saberEnergia())
+  }
+
+  test "dormir aumenta la energia de tom en 50" {
+    var energiaInicial = tom.saberEnergia()
+    tom.dormir()
+    assert.equals(energiaInicial + 50, tom.saberEnergia())
+  }
+
+  test "limpiarCasa de tom reduce su energia en 40" {
+    var energiaInicial = tom.saberEnergia()
+    tom.limpiarCasa()
+    assert.equals(energiaInicial - 40, tom.saberEnergia())
+  }
+
+  test "tom puede sacar a un quilombero mas lento que el" {
+    assert.that(tom.puedeSacarQuilombero(object { method velocidad() = 0 }))
+  }
+
+  test "tom no puede sacar a un quilombero mas rapido que el" {
+    assert.notThat(tom.puedeSacarQuilombero(speedyGonzalez))
+  }
+
+  test "roboCat siempre puede sacar quilombero" {
+    assert.that(roboCat.puedeSacarQuilombero(speedyGonzalez))
+  }
+
+  test "flox limpiarCasa no cambia la suciedad" {
+    var suciedadInicial = casa.saberSuciedad()
+    flox.limpiarCasa()
+    assert.equals(suciedadInicial, casa.saberSuciedad())
+  }
+
+}
+
+describe "quilomberos" {
+
+  test "jerry hacerQuilombo aumenta la suciedad en 110" {
+    var suciedadInicial = casa.saberSuciedad()
+    jerry.hacerQuilombo()
+    assert.equals(suciedadInicial + 110, casa.saberSuciedad())
+  }
+
+  test "jerry hacerQuilombo reduce su propia velocidad en 1" {
+    var velocidadInicial = jerry.velocidad()
+    jerry.hacerQuilombo()
+    assert.equals(velocidadInicial - 1, jerry.velocidad())
+  }
+
+  test "tuffy tiene velocidad constante de 10" {
+    casa.asignarQuilombero(tuffy)
+    tuffy.hacerQuilombo()
+    assert.equals(10, tuffy.velocidad())
+  }
+
+  test "tuffy hacerQuilombo interrumpe el sueño del cuidador" {
+    casa.asignarCuidador(tom)
+    var energiaInicial = tom.saberEnergia()
+    tuffy.hacerQuilombo()
+    assert.equals(energiaInicial - 20, tom.saberEnergia())
+  }
+
+  test "la velocidad de la pandilla es la del integrante mas lento (jerry)" {
+    assert.equals(jerry.velocidad(), pandilla.velocidad())
+  }
+
+  test "pandilla hacerQuilombo hace que todos sus integrantes generen quilombo" {
+    casa.asignarCuidador(tom)
+    var suciedadInicial = casa.saberSuciedad()
+    var energiaInicial = tom.saberEnergia()
+    pandilla.hacerQuilombo()
+    assert.equals(suciedadInicial + 110, casa.saberSuciedad())
+    assert.equals(energiaInicial - 20, tom.saberEnergia())
+  }
+  test "speedyGonzalez hacerQuilombo ensucia muchisimo e interrumpe al cuidador" {
+    casa.asignarCuidador(tom)
+    var suciedadInicial = casa.saberSuciedad()
+    var energiaInicial = tom.saberEnergia()
+    speedyGonzalez.hacerQuilombo()
+    assert.equals(suciedadInicial + 9999999999999999, casa.saberSuciedad())
+    assert.equals(energiaInicial - 20, tom.saberEnergia())
+  }
+
+}
+
+describe "casa" {
+
+  test "pasarDia limpia la casa y saca al quilombero si el cuidador puede" {
+    casa.asignarCuidador(roboCat)
+    casa.asignarQuilombero(jerry)
+    casa.pasarDia()
+    assert.equals(0, casa.saberSuciedad())
+    assert.equals(null, casa.saberQuilombero())
+  }
+
+  test "pasarDia no saca al quilombero si el cuidador no puede" {
+    casa.asignarCuidador(flox)
+    casa.asignarQuilombero(jerry)
+    casa.pasarDia()
+    assert.equals(jerry, casa.saberQuilombero())
+  }
+
+  test "pasarDia no saca a un quilombero mas rapido que el cuidador" {
+    casa.asignarCuidador(tom)
+    casa.asignarQuilombero(speedyGonzalez)
+    casa.pasarDia()
+    assert.equals(speedyGonzalez, casa.saberQuilombero())
+  }
+
+  test "pasarNoche hace dormir al cuidador y el quilombero genera quilombo" {
+    casa.asignarCuidador(tom)
+    casa.asignarQuilombero(jerry)
+    var energiaInicial = tom.saberEnergia()
+    var suciedadInicial = casa.saberSuciedad()
+    casa.pasarNoche()
+    assert.equals(energiaInicial + 50, tom.saberEnergia())
+    assert.equals(suciedadInicial + 110, casa.saberSuciedad())
+  }
+
+  test "pasarNoche no genera quilombo si no hay quilombero" {
+    casa.asignarCuidador(tom)
+    casa.asignarQuilombero(null)
+    var suciedadInicial = casa.saberSuciedad()
+    casa.pasarNoche()
+    assert.equals(suciedadInicial, casa.saberSuciedad())
+  }
+
+  test "limpiar no deja la suciedad en negativo" {
+    casa.limpiar(999999999999999999999999999999999999999999999)
+    assert.equals(0, casa.saberSuciedad())
+  }
+
+  test "suciedad aumenta el nivel indicado" {
+    var suciedadInicial = casa.saberSuciedad()
+    casa.suciedad(50)
+    assert.equals(suciedadInicial + 50, casa.saberSuciedad())
+  }
+
+  test "hacerRuido interrumpe el sueño del cuidador que se pueda interrumpir" {
+    casa.asignarCuidador(tom)
+    var energiaInicial = tom.saberEnergia()
+    casa.hacerRuido()
+    assert.equals(energiaInicial - 20, tom.saberEnergia())
+  }
+
+  test "asignarCuidador y asignarQuilombero cambian el estado de la casa" {
+    casa.asignarCuidador(flox)
+    casa.asignarQuilombero(speedyGonzalez)
+    casa.pasarDia()
+    assert.equals(speedyGonzalez, casa.saberQuilombero())
+    assert.equals(flox, casa.saberCuidador())
   }
 
 }
